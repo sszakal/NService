@@ -1,0 +1,33 @@
+﻿<#@ template debug="false" hostspecific="True" language="C#" #>
+<#@ assembly name="System.Core"#>
+<#@ assembly name="System.Data.Linq"#>
+<#@ assembly name="$(TargetDir)NService.Contract.dll" #>
+<#@ import namespace="System"#>
+<#@ import namespace="System.Linq"#>
+<#@ import namespace="NService.Contract.Interfaces" #> 
+<#@output extension=".ts"#>
+
+<# 
+	var commandInterfaceType = typeof(ICommand);
+	var commands = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(a => a.GetTypes())
+                .Where(t => !t.IsAbstract && !t.IsInterface && commandInterfaceType.IsAssignableFrom(t))
+                .Select(t => new {Name = t.Name, Value = t.FullName });
+#>
+
+/// <reference path="Contracts.d.ts" />
+
+namespace NService.Contract.Commands {
+	type CommandType = <# foreach(var command in commands) { #><#= (command.Value == commands.First().Value) ? $"\"{command.Value}\"" : $"\n\t\t\t\t\t | \"{command.Value}\"" #><# }#>;
+
+	class RemoteCommand {
+		Name: CommandType;
+		Data: CommandBase;
+	}
+
+	export class MessageTypes {
+<# foreach(var command in commands) { #>
+		public static <#= command.Name #> : CommandType = "<#= command.Value #>";
+<# }#>
+	}
+}
